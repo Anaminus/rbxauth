@@ -44,6 +44,21 @@ type Config struct {
 	Host string
 }
 
+type userInfo struct {
+	id   int64
+	name string
+}
+
+type twoStepInfo struct {
+	mediaType string
+	ticket    string
+}
+
+type loginResponse struct {
+	user                    *userInfo
+	twoStepVerificationData *twoStepInfo
+}
+
 // LoginCred attempts to authenticate a user by using the provided
 // credentials.
 //
@@ -93,20 +108,11 @@ func (cfg *Config) LoginCred(credType, value string, password []byte) ([]*http.C
 	}
 	defer resp.Body.Close()
 
-	type loginResponse struct {
-		user *struct {
-			id   int64
-			name string
-		}
-		twoStepVerificationData *struct {
-			mediaType string
-			ticket    string
-		}
+	jd := json.NewDecoder(resp.Body)
+	var apiResp struct {
+		loginResponse
 		errorResponse
 	}
-
-	jd := json.NewDecoder(resp.Body)
-	var apiResp loginResponse
 	if err = jd.Decode(&apiResp); err != nil {
 		return nil, nil, err
 	}
@@ -348,7 +354,10 @@ func (s *Step) Resend() error {
 	defer resp.Body.Close()
 
 	jd := json.NewDecoder(resp.Body)
-	var apiResp errorResponse
+	var apiResp struct {
+		twoStepInfo
+		errorResponse
+	}
 	if err = jd.Decode(&apiResp); err != nil {
 		return err
 	}
@@ -360,6 +369,9 @@ func (s *Step) Resend() error {
 	if resp.StatusCode < 200 && resp.StatusCode >= 300 {
 		return StatusError(resp.StatusCode)
 	}
+
+	s.MediaType = apiResp.mediaType
+	s.req.ticket = apiResp.ticket
 
 	return nil
 }
