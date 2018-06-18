@@ -59,23 +59,32 @@ type loginResponse struct {
 	twoStepVerificationData *twoStepInfo
 }
 
+// Cred holds information used to identify an account.
+type Cred struct {
+	// Type specifies the kind of identifier. The following types are known to
+	// be accepted by the auth API:
+	//
+	//     "Username"    : The username associated with the account.
+	//     "Email"       : The email associated with the account.
+	//     "PhoneNumber" : The phone number associated with the account.
+	//
+	Type string
+	// Ident is the identifier itself.
+	Ident string
+}
+
 // LoginCred attempts to authenticate a user by using the provided
 // credentials.
 //
-// The credType argument specifies a kind of identifier, which is associated
-// with the account to be authenticated. The value argument is the identifier
-// itself. The following types are known:
-//
-//     "Username"    : The username associated with the account.
-//     "Email"       : The email associated with the account.
-//     "PhoneNumber" : The phone number associated with the account.
+// The cred argument specifies the credentials associated with the account to
+// be authenticated.
 //
 // The password argument is specified as a slice for future compatibility,
 // where the password may be handled within secured memory.
 //
 // If multi-step authentication is required, then a Step object is returned.
 // Otherwise, HTTP cookies representing the session are returned.
-func (cfg *Config) LoginCred(credType, value string, password []byte) ([]*http.Cookie, *Step, error) {
+func (cfg *Config) LoginCred(cred Cred, password []byte) ([]*http.Cookie, *Step, error) {
 	host := cfg.Host
 
 	type loginRequest struct {
@@ -84,8 +93,8 @@ func (cfg *Config) LoginCred(credType, value string, password []byte) ([]*http.C
 		password string `json: ",omitempty"`
 	}
 	body, _ := json.Marshal(&loginRequest{
-		ctype:    credType,
-		cvalue:   value,
+		ctype:    cred.Type,
+		cvalue:   cred.Ident,
 		password: string(password),
 	})
 
@@ -145,7 +154,7 @@ func (cfg *Config) LoginCred(credType, value string, password []byte) ([]*http.C
 
 // Login wraps LoginCred, using a username for the credentials.
 func (cfg *Config) Login(username string, password []byte) ([]*http.Cookie, *Step, error) {
-	return cfg.LoginCred("Username", username, password)
+	return cfg.LoginCred(Cred{Type: "Username", Ident: username}, password)
 }
 
 func getUsername(host string, userID int64) (string, error) {
@@ -187,7 +196,7 @@ func (cfg *Config) LoginID(userID int64, password []byte) ([]*http.Cookie, *Step
 	if err != nil {
 		return nil, nil, err
 	}
-	return cfg.LoginCred("Username", username, password)
+	return cfg.LoginCred(Cred{Type: "Username", Ident: username}, password)
 }
 
 // Logout destroys the session associated with the given cookies, ensuring
