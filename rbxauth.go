@@ -122,7 +122,7 @@ func (cfg *Config) LoginCred(credType, value string, password []byte) ([]*http.C
 	if apiResp.twoStepVerificationData != nil {
 		step := &Step{
 			cfg:       Config{Host: host}, // ensure host isn't mutated.
-			mediaType: apiResp.twoStepVerificationData.mediaType,
+			MediaType: apiResp.twoStepVerificationData.mediaType,
 			req: stepRequest{
 				resendRequest: resendRequest{
 					username:   apiResp.user.name,
@@ -259,9 +259,11 @@ func (err StatusError) Error() string {
 
 // Step holds the state of a multi-step verification action.
 type Step struct {
-	cfg       Config
-	mediaType string
-	req       stepRequest
+	cfg Config
+	req stepRequest
+
+	// MediaType indicates the means by which the verification code was sent.
+	MediaType string
 }
 
 type stepRequest struct {
