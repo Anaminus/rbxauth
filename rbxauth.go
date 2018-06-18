@@ -77,7 +77,9 @@ type Cred struct {
 // credentials.
 //
 // The cred argument specifies the credentials associated with the account to
-// be authenticated.
+// be authenticated. As a special case, if the Type field is "UserID", then
+// the Ident field is interpreted as an integer, indicating the user ID of the
+// account.
 //
 // The password argument is specified as a slice for future compatibility,
 // where the password may be handled within secured memory.
@@ -86,6 +88,18 @@ type Cred struct {
 // Otherwise, HTTP cookies representing the session are returned.
 func (cfg *Config) LoginCred(cred Cred, password []byte) ([]*http.Cookie, *Step, error) {
 	host := cfg.Host
+
+	if strings.ToLower(cred.Type) == "UserID" {
+		userID, err := strconv.ParseInt(cred.Ident, 10, 64)
+		if err != nil {
+			return nil, nil, err
+		}
+		cred.Type = "Username"
+		cred.Ident, err = getUsername(host, userID)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
 
 	type loginRequest struct {
 		ctype    string `json: ",omitempty"`
