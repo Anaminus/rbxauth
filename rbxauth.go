@@ -266,7 +266,7 @@ func (errs Errors) Error() string {
 	return strings.Join(s, "; ")
 }
 
-// Error represents an error return from an API response.
+// Error represents an error returned from an API response.
 type Error struct {
 	Code    int    `json: "code"`
 	Message string `json: "message"`
