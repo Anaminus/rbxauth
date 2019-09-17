@@ -18,6 +18,12 @@ import (
 //
 // Returns the updated cred and cookies, or any error that may have occurred.
 func (cfg *Config) PromptCred(cred Cred) (Cred, []*http.Cookie, error) {
+	if stat, err := os.Stdin.Stat(); err != nil {
+		return cred, nil, err
+	} else if stat.Mode()&os.ModeCharDevice == 0 {
+		return cred, nil, fmt.Errorf("stdin is a pipe")
+	}
+
 	scanner := bufio.NewScanner(os.Stdin)
 	scanner.Split(bufio.ScanLines)
 
