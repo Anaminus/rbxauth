@@ -13,10 +13,7 @@ import (
 func ReadCookies(r io.Reader) (cookies []*http.Cookie, err error) {
 	// There's no direct way to parse cookies, so we have to cheat a little.
 	h, err := textproto.NewReader(bufio.NewReader(r)).ReadMIMEHeader()
-	if err != nil {
-		if err == io.EOF {
-			err = nil
-		}
+	if err != nil && err != io.EOF {
 		return nil, err
 	}
 	resp := http.Response{Header: http.Header(h)}
