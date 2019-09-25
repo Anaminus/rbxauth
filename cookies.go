@@ -2,6 +2,7 @@ package rbxauth
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"net/http"
 	"net/textproto"
@@ -14,7 +15,7 @@ func ReadCookies(r io.Reader) (cookies []*http.Cookie, err error) {
 	// There's no direct way to parse cookies, so we have to cheat a little.
 	h, err := textproto.NewReader(bufio.NewReader(r)).ReadMIMEHeader()
 	if err != nil && err != io.EOF {
-		return nil, err
+		return nil, fmt.Errorf("read cookies: %w", err)
 	}
 	resp := http.Response{Header: http.Header(h)}
 	return resp.Cookies(), nil
@@ -28,5 +29,8 @@ func WriteCookies(w io.Writer, cookies []*http.Cookie) (err error) {
 	for _, cookie := range cookies {
 		h.Add("Set-Cookie", cookie.String())
 	}
-	return h.Write(w)
+	if err = h.Write(w); err != nil {
+		return fmt.Errorf("write cookies: %w", err)
+	}
+	return nil
 }
